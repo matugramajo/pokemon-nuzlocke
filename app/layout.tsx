@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
+  title: 'Nuzlocke Tracker',
+  description: 'Para trackear los muchos nuzlocke que vendran y guardarlo para la posteridad!!',
   generator: 'v0.dev',
 }
 

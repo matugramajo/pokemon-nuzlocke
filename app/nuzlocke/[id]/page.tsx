@@ -11,8 +11,8 @@ import { getPokemonByNuzlocke } from "@/lib/actions/pokemon"
 import { getBattlesByNuzlocke } from "@/lib/actions/battles"
 import { getRulesByNuzlocke } from "@/lib/actions/rules"
 
-export default async function NuzlockePage({ params }: { params: { id: string } }) {
-  const nuzlockeId = params.id
+export default async function NuzlockePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: nuzlockeId } = await params
 
   // Obtener datos del nuzlocke y sus relaciones desde la base de datos
   const nuzlocke = await getNuzlockeById(nuzlockeId)
@@ -37,15 +37,16 @@ export default async function NuzlockePage({ params }: { params: { id: string } 
         <NuzlockeHeader nuzlocke={nuzlocke} />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {nuzlocke.players.map((player) => (
-            <PlayerCard
-              key={player.id}
-              name={player.name}
-              lives={player.lives}
-              pokemonCount={pokemon.filter((p) => p.player_id === player.id && p.is_alive).length}
-              image={player.image_url || "/placeholder.svg?height=100&width=100"}
-            />
-          ))}
+        {nuzlocke.players.map((player: { id: string; name: string; lives: number; image_url?: string }) => (
+  <PlayerCard
+    key={player.id}
+    name={player.name}
+    lives={player.lives}
+    pokemonCount={pokemon.filter((p) => p.player_id === player.id && p.is_alive).length}
+    image={player.image_url || "/placeholder.svg?height=100&width=100"}
+  />
+))}
+
         </div>
 
         <Tabs defaultValue="pokemon" className="bg-white rounded-lg shadow-lg p-4 mb-8">

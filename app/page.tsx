@@ -30,7 +30,7 @@ export default async function Home() {
       </main>
 
       <footer className="bg-pink-500 text-white p-4 text-center">
-        <p>© {new Date().getFullYear()} Nuzlocke Tracker - Hecho con ❤️ para fans de Pokémon</p>
+        <p>© {new Date().getFullYear()} Nuzlocke Tracker - Hecho con ❤️</p>
       </footer>
     </div>
   )
