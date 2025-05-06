@@ -6,11 +6,19 @@ import { BattleHistory } from "@/components/battle-history"
 import { Rules } from "@/components/rules"
 import { AddPokemonForm } from "@/components/add-pokemon-form"
 import { NuzlockeHeader } from "@/components/nuzlocke-header"
+import { getNuzlockeById } from "@/lib/actions/nuzlocke"
+import { getPokemonByNuzlocke } from "@/lib/actions/pokemon"
+import { getBattlesByNuzlocke } from "@/lib/actions/battles"
+import { getRulesByNuzlocke } from "@/lib/actions/rules"
 
-export default function NuzlockePage({ params }: { params: { id: string } }) {
-  // En una implementación real, aquí cargaríamos los datos del Nuzlocke específico
-  // basándonos en el ID de la URL
+export default async function NuzlockePage({ params }: { params: { id: string } }) {
   const nuzlockeId = params.id
+
+  // Obtener datos del nuzlocke y sus relaciones desde la base de datos
+  const nuzlocke = await getNuzlockeById(nuzlockeId)
+  const pokemon = await getPokemonByNuzlocke(nuzlockeId)
+  const battles = await getBattlesByNuzlocke(nuzlockeId)
+  const rules = await getRulesByNuzlocke(nuzlockeId)
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-100 to-pink-50">
@@ -26,12 +34,18 @@ export default function NuzlockePage({ params }: { params: { id: string } }) {
       </header>
 
       <main className="container mx-auto p-4 md:p-6">
-        <NuzlockeHeader id={nuzlockeId} />
+        <NuzlockeHeader nuzlocke={nuzlocke} />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <PlayerCard name="Matilde" lives={3} pokemonCount={5} image="/placeholder.svg?height=100&width=100" />
-          <PlayerCard name="Jugador 2" lives={2} pokemonCount={4} image="/placeholder.svg?height=100&width=100" />
-          <PlayerCard name="Jugador 3" lives={3} pokemonCount={6} image="/placeholder.svg?height=100&width=100" />
+          {nuzlocke.players.map((player) => (
+            <PlayerCard
+              key={player.id}
+              name={player.name}
+              lives={player.lives}
+              pokemonCount={pokemon.filter((p) => p.player_id === player.id && p.is_alive).length}
+              image={player.image_url || "/placeholder.svg?height=100&width=100"}
+            />
+          ))}
         </div>
 
         <Tabs defaultValue="pokemon" className="bg-white rounded-lg shadow-lg p-4 mb-8">
@@ -51,19 +65,19 @@ export default function NuzlockePage({ params }: { params: { id: string } }) {
           </TabsList>
 
           <TabsContent value="pokemon">
-            <PokemonList />
+            <PokemonList nuzlockeId={nuzlockeId} players={nuzlocke.players} pokemon={pokemon} />
           </TabsContent>
 
           <TabsContent value="battles">
-            <BattleHistory />
+            <BattleHistory nuzlockeId={nuzlockeId} battles={battles} players={nuzlocke.players} />
           </TabsContent>
 
           <TabsContent value="rules">
-            <Rules />
+            <Rules nuzlockeId={nuzlockeId} rules={rules} />
           </TabsContent>
 
           <TabsContent value="add">
-            <AddPokemonForm />
+            <AddPokemonForm nuzlockeId={nuzlockeId} players={nuzlocke.players} />
           </TabsContent>
         </Tabs>
       </main>

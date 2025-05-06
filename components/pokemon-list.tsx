@@ -5,166 +5,200 @@ import Image from "next/image"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { toast } from "@/components/ui/use-toast"
+import { Toaster } from "@/components/ui/toaster"
+import { markPokemonAsDead } from "@/lib/actions/pokemon"
 
-// Datos de ejemplo
-const initialPokemon = {
-  Matilde: [
-    {
-      id: 1,
-      name: "Ricardo",
-      species: "Thwackey",
-      gender: "M",
-      level: 18,
-      ability: "Overgrow",
-      nature: "Naughty",
-      moves: ["Scratch", "Razor Leaf", "Branch Poke", "Double Hit"],
-      ivs: { hp: 29, atk: 7, def: 19, spa: 18, spd: 7, spe: 25 },
-      evs: { hp: 4, atk: 8, def: 4, spa: 3, spd: 11, spe: 16 },
-      dynamaxLevel: 0,
-    },
-    {
-      id: 2,
-      name: "Luna",
-      species: "Wooloo",
-      gender: "F",
-      level: 15,
-      ability: "Fluffy",
-      nature: "Calm",
-      moves: ["Tackle", "Defense Curl", "Rollout", "Double Kick"],
-      ivs: { hp: 20, atk: 15, def: 25, spa: 10, spd: 22, spe: 18 },
-      evs: { hp: 6, atk: 2, def: 8, spa: 0, spd: 10, spe: 4 },
-      dynamaxLevel: 0,
-    },
-  ],
-  "Jugador 2": [
-    {
-      id: 1,
-      name: "Sparky",
-      species: "Pikachu",
-      gender: "M",
-      level: 17,
-      ability: "Static",
-      nature: "Jolly",
-      moves: ["Thunder Shock", "Quick Attack", "Double Team", "Electro Ball"],
-      ivs: { hp: 22, atk: 20, def: 15, spa: 25, spd: 18, spe: 30 },
-      evs: { hp: 0, atk: 10, def: 0, spa: 8, spd: 0, spe: 12 },
-      dynamaxLevel: 0,
-    },
-  ],
-  "Jugador 3": [
-    {
-      id: 1,
-      name: "Blaze",
-      species: "Charmander",
-      gender: "M",
-      level: 16,
-      ability: "Blaze",
-      nature: "Adamant",
-      moves: ["Scratch", "Ember", "Dragon Breath", "Metal Claw"],
-      ivs: { hp: 24, atk: 28, def: 16, spa: 20, spd: 15, spe: 26 },
-      evs: { hp: 0, atk: 12, def: 4, spa: 0, spd: 0, spe: 14 },
-      dynamaxLevel: 0,
-    },
-  ],
+interface PokemonListProps {
+  nuzlockeId: string
+  players: any[]
+  pokemon: any[]
 }
 
-export function PokemonList() {
-  const [pokemon] = useState(initialPokemon)
+export function PokemonList({ nuzlockeId, players, pokemon }: PokemonListProps) {
+  const [selectedPokemon, setSelectedPokemon] = useState<any>(null)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Agrupar Pokémon por jugador
+  const pokemonByPlayer = players.reduce((acc, player) => {
+    acc[player.id] = pokemon.filter((p) => p.player_id === player.id)
+    return acc
+  }, {})
+
+  const handleMarkAsDead = async () => {
+    if (!selectedPokemon) return
+
+    setIsSubmitting(true)
+    try {
+      await markPokemonAsDead(selectedPokemon.id, nuzlockeId)
+
+      toast({
+        title: "Pokémon marcado como muerto",
+        description: `${selectedPokemon.nickname} (${selectedPokemon.species}) ha sido marcado como muerto`,
+      })
+      setIsDialogOpen(false)
+    } catch (error) {
+      console.error("Error marking pokemon as dead:", error)
+      toast({
+        title: "Error",
+        description: "Ocurrió un error al marcar el Pokémon como muerto. Inténtalo de nuevo.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   return (
-    <Tabs defaultValue="Matilde">
-      <TabsList className="grid grid-cols-3 mb-6">
-        <TabsTrigger value="Matilde" className="data-[state=active]:bg-pink-200">
-          Matilde
-        </TabsTrigger>
-        <TabsTrigger value="Jugador 2" className="data-[state=active]:bg-pink-200">
-          Jugador 2
-        </TabsTrigger>
-        <TabsTrigger value="Jugador 3" className="data-[state=active]:bg-pink-200">
-          Jugador 3
-        </TabsTrigger>
-      </TabsList>
+    <>
+      <Tabs defaultValue={players[0]?.id}>
+        <TabsList className="grid grid-cols-3 mb-6">
+          {players.map((player) => (
+            <TabsTrigger key={player.id} value={player.id} className="data-[state=active]:bg-pink-200">
+              {player.name}
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
-      {Object.keys(pokemon).map((player) => (
-        <TabsContent key={player} value={player}>
-          <h2 className="text-2xl font-bold mb-4">Equipo de {player}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {pokemon[player].map((poke) => (
-              <Card key={poke.id} className="border-2 border-pink-200 hover:border-pink-400 transition-colors">
-                <CardHeader className="bg-pink-100 pb-2">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <CardTitle>
-                        {poke.name} ({poke.species})
-                      </CardTitle>
-                      <CardDescription>
-                        Nivel {poke.level} • {poke.gender === "M" ? "♂️" : "♀️"}
-                      </CardDescription>
-                    </div>
-                    <div className="w-16 h-16 relative">
-                      <Image
-                        src="/placeholder.svg?height=64&width=64"
-                        alt={poke.species}
-                        width={64}
-                        height={64}
-                        className="object-contain"
-                      />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4">
-                  <div className="grid grid-cols-2 gap-2 mb-4">
-                    <div>
-                      <p className="text-sm text-gray-500">Habilidad</p>
-                      <p className="font-medium">{poke.ability}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Naturaleza</p>
-                      <p className="font-medium">{poke.nature}</p>
-                    </div>
-                  </div>
+        {players.map((player) => (
+          <TabsContent key={player.id} value={player.id}>
+            <h2 className="text-2xl font-bold mb-4">Equipo de {player.name}</h2>
 
-                  <div className="mb-4">
-                    <p className="text-sm text-gray-500 mb-1">Movimientos</p>
-                    <div className="flex flex-wrap gap-2">
-                      {poke.moves.map((move, index) => (
-                        <Badge key={index} variant="outline" className="bg-pink-50">
-                          {move}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-500 mb-1">IVs</p>
-                      <div className="text-xs grid grid-cols-2 gap-x-2">
-                        <p>HP: {poke.ivs.hp}</p>
-                        <p>Atk: {poke.ivs.atk}</p>
-                        <p>Def: {poke.ivs.def}</p>
-                        <p>SpA: {poke.ivs.spa}</p>
-                        <p>SpD: {poke.ivs.spd}</p>
-                        <p>Spe: {poke.ivs.spe}</p>
+            {!pokemonByPlayer[player.id] || pokemonByPlayer[player.id].length === 0 ? (
+              <div className="text-center p-8 bg-gray-50 rounded-lg">
+                <p className="text-gray-500">No hay Pokémon registrados para este jugador.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {pokemonByPlayer[player.id]?.map((poke) => (
+                  <Card
+                    key={poke.id}
+                    className={`border-2 ${poke.is_alive ? "border-pink-200 hover:border-pink-400" : "border-gray-200 bg-gray-50 opacity-70"} transition-colors`}
+                  >
+                    <CardHeader className="bg-pink-100 pb-2">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            {poke.nickname} ({poke.species})
+                            {!poke.is_alive && <Badge variant="destructive">Muerto</Badge>}
+                          </CardTitle>
+                          <CardDescription>
+                            Nivel {poke.level} • {poke.gender === "M" ? "♂️" : poke.gender === "F" ? "♀️" : ""}
+                          </CardDescription>
+                        </div>
+                        <div className="w-16 h-16 relative">
+                          <Image
+                            src="/placeholder.svg?height=64&width=64"
+                            alt={poke.species}
+                            width={64}
+                            height={64}
+                            className="object-contain"
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 mb-1">EVs</p>
-                      <div className="text-xs grid grid-cols-2 gap-x-2">
-                        <p>HP: {poke.evs.hp}</p>
-                        <p>Atk: {poke.evs.atk}</p>
-                        <p>Def: {poke.evs.def}</p>
-                        <p>SpA: {poke.evs.spa}</p>
-                        <p>SpD: {poke.evs.spd}</p>
-                        <p>Spe: {poke.evs.spe}</p>
+                    </CardHeader>
+                    <CardContent className="p-4">
+                      <div className="grid grid-cols-2 gap-2 mb-4">
+                        <div>
+                          <p className="text-sm text-gray-500">Habilidad</p>
+                          <p className="font-medium">{poke.ability || "N/A"}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Naturaleza</p>
+                          <p className="font-medium">{poke.nature || "N/A"}</p>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-      ))}
-    </Tabs>
+
+                      <div className="mb-4">
+                        <p className="text-sm text-gray-500 mb-1">Movimientos</p>
+                        <div className="flex flex-wrap gap-2">
+                          {poke.moves?.map((move, index) => (
+                            <Badge key={index} variant="outline" className="bg-pink-50">
+                              {move}
+                            </Badge>
+                          )) || <span className="text-gray-400">Sin movimientos</span>}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm text-gray-500 mb-1">IVs</p>
+                          <div className="text-xs grid grid-cols-2 gap-x-2">
+                            <p>HP: {poke.iv_hp || 0}</p>
+                            <p>Atk: {poke.iv_atk || 0}</p>
+                            <p>Def: {poke.iv_def || 0}</p>
+                            <p>SpA: {poke.iv_spa || 0}</p>
+                            <p>SpD: {poke.iv_spd || 0}</p>
+                            <p>Spe: {poke.iv_spe || 0}</p>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500 mb-1">EVs</p>
+                          <div className="text-xs grid grid-cols-2 gap-x-2">
+                            <p>HP: {poke.ev_hp || 0}</p>
+                            <p>Atk: {poke.ev_atk || 0}</p>
+                            <p>Def: {poke.ev_def || 0}</p>
+                            <p>SpA: {poke.ev_spa || 0}</p>
+                            <p>SpD: {poke.ev_spd || 0}</p>
+                            <p>Spe: {poke.ev_spe || 0}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {poke.is_alive && (
+                        <div className="mt-4 flex justify-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-500 border-red-200 hover:bg-red-50"
+                            onClick={() => {
+                              setSelectedPokemon(poke)
+                              setIsDialogOpen(true)
+                            }}
+                          >
+                            Marcar como muerto
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        ))}
+      </Tabs>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Marcar Pokémon como muerto</DialogTitle>
+            <DialogDescription>
+              ¿Estás seguro de que quieres marcar a {selectedPokemon?.nickname} ({selectedPokemon?.species}) como
+              muerto? Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleMarkAsDead} disabled={isSubmitting}>
+              {isSubmitting ? "Procesando..." : "Marcar como muerto"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Toaster />
+    </>
   )
 }

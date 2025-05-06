@@ -18,44 +18,63 @@ import { toast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
 import { ArrowLeft, Edit, Calendar, Clock, MoreHorizontal, Archive, AlertTriangle } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { updateNuzlocke, archiveNuzlocke } from "@/lib/actions/nuzlocke"
 
 interface NuzlockeHeaderProps {
-  id: string
+  nuzlocke: any
 }
 
-export function NuzlockeHeader({ id }: NuzlockeHeaderProps) {
-  // En una implementación real, cargaríamos los datos del Nuzlocke basados en el ID
-  const [nuzlocke] = useState({
-    id,
-    title: "Pokémon Sword Nuzlocke",
-    game: "Pokémon Sword",
-    startDate: "2023-01-15",
-    status: "active",
-    description:
-      "Nuestro desafío Nuzlocke en la región de Galar. Estamos siguiendo las reglas estándar con algunas modificaciones personalizadas.",
-    lastUpdated: new Date().toISOString(),
-  })
-
+export function NuzlockeHeader({ nuzlocke }: NuzlockeHeaderProps) {
   const [isEditingNotes, setIsEditingNotes] = useState(false)
-  const [notes, setNotes] = useState(nuzlocke.description)
+  const [notes, setNotes] = useState(nuzlocke.description || "")
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSaveNotes = () => {
-    // En una implementación real, guardaríamos las notas en la base de datos
-    toast({
-      title: "Notas actualizadas",
-      description: "Las notas del Nuzlocke han sido actualizadas correctamente",
-    })
-    setIsEditingNotes(false)
+  const handleSaveNotes = async () => {
+    setIsSubmitting(true)
+    try {
+      await updateNuzlocke({
+        id: nuzlocke.id,
+        description: notes,
+      })
+
+      toast({
+        title: "Notas actualizadas",
+        description: "Las notas del Nuzlocke han sido actualizadas correctamente",
+      })
+      setIsEditingNotes(false)
+    } catch (error) {
+      console.error("Error updating notes:", error)
+      toast({
+        title: "Error",
+        description: "Ocurrió un error al actualizar las notas. Inténtalo de nuevo.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const handleArchiveNuzlocke = () => {
-    // En una implementación real, archivaríamos el Nuzlocke en la base de datos
-    toast({
-      title: "Nuzlocke archivado",
-      description: "El Nuzlocke ha sido archivado correctamente",
-    })
-    setIsArchiveDialogOpen(false)
+  const handleArchiveNuzlocke = async () => {
+    setIsSubmitting(true)
+    try {
+      await archiveNuzlocke(nuzlocke.id)
+
+      toast({
+        title: "Nuzlocke archivado",
+        description: "El Nuzlocke ha sido archivado correctamente",
+      })
+      setIsArchiveDialogOpen(false)
+    } catch (error) {
+      console.error("Error archiving nuzlocke:", error)
+      toast({
+        title: "Error",
+        description: "Ocurrió un error al archivar el Nuzlocke. Inténtalo de nuevo.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -73,10 +92,18 @@ export function NuzlockeHeader({ id }: NuzlockeHeaderProps) {
               ? "bg-green-100 text-green-800 border-green-300"
               : nuzlocke.status === "completed"
                 ? "bg-blue-100 text-blue-800 border-blue-300"
-                : "bg-red-100 text-red-800 border-red-300"
+                : nuzlocke.status === "failed"
+                  ? "bg-red-100 text-red-800 border-red-300"
+                  : "bg-gray-100 text-gray-800 border-gray-300"
           }
         >
-          {nuzlocke.status === "active" ? "Activo" : nuzlocke.status === "completed" ? "Completado" : "Fallido"}
+          {nuzlocke.status === "active"
+            ? "Activo"
+            : nuzlocke.status === "completed"
+              ? "Completado"
+              : nuzlocke.status === "failed"
+                ? "Fallido"
+                : "Archivado"}
         </Badge>
         <div className="ml-auto">
           <DropdownMenu>
@@ -105,12 +132,12 @@ export function NuzlockeHeader({ id }: NuzlockeHeaderProps) {
           <div className="flex flex-col md:flex-row md:items-center gap-4 mb-4">
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-gray-500" />
-              <span className="text-sm">Iniciado: {new Date(nuzlocke.startDate).toLocaleDateString()}</span>
+              <span className="text-sm">Iniciado: {new Date(nuzlocke.start_date).toLocaleDateString()}</span>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-gray-500" />
               <span className="text-sm">
-                Última actualización: {new Date(nuzlocke.lastUpdated).toLocaleDateString()}
+                Última actualización: {new Date(nuzlocke.last_updated).toLocaleDateString()}
               </span>
             </div>
           </div>
@@ -124,16 +151,16 @@ export function NuzlockeHeader({ id }: NuzlockeHeaderProps) {
                 className="min-h-[100px]"
               />
               <div className="flex justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={() => setIsEditingNotes(false)}>
+                <Button variant="outline" size="sm" onClick={() => setIsEditingNotes(false)} disabled={isSubmitting}>
                   Cancelar
                 </Button>
-                <Button size="sm" onClick={handleSaveNotes}>
-                  Guardar
+                <Button size="sm" onClick={handleSaveNotes} disabled={isSubmitting}>
+                  {isSubmitting ? "Guardando..." : "Guardar"}
                 </Button>
               </div>
             </div>
           ) : (
-            <p>{nuzlocke.description}</p>
+            <p>{nuzlocke.description || "Sin descripción. Haz clic en 'Editar notas' para añadir una descripción."}</p>
           )}
         </CardContent>
       </Card>
@@ -154,11 +181,11 @@ export function NuzlockeHeader({ id }: NuzlockeHeaderProps) {
             </p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsArchiveDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsArchiveDialogOpen(false)} disabled={isSubmitting}>
               Cancelar
             </Button>
-            <Button variant="destructive" onClick={handleArchiveNuzlocke}>
-              Archivar
+            <Button variant="destructive" onClick={handleArchiveNuzlocke} disabled={isSubmitting}>
+              {isSubmitting ? "Archivando..." : "Archivar"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,8 +1,12 @@
 import Link from "next/link"
 import { NuzlockeList } from "@/components/nuzlocke-list"
 import { CreateNuzlockeButton } from "@/components/create-nuzlocke-button"
+import { getNuzlockes } from "@/lib/actions/nuzlocke"
 
-export default function Home() {
+export default async function Home() {
+  // Obtener todos los nuzlockes de la base de datos
+  const nuzlockes = await getNuzlockes()
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-100 to-pink-50">
       <header className="bg-pink-500 text-white p-4 shadow-md">
@@ -22,7 +26,7 @@ export default function Home() {
           <CreateNuzlockeButton />
         </div>
 
-        <NuzlockeList />
+        <NuzlockeList nuzlockes={nuzlockes} />
       </main>
 
       <footer className="bg-pink-500 text-white p-4 text-center">

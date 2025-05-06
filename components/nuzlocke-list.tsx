@@ -1,51 +1,24 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Clock, Trophy, Skull, ArrowRight } from "lucide-react"
+import { Clock, Skull, ArrowRight } from "lucide-react"
 
-// Datos de ejemplo para los Nuzlockes
-const initialNuzlockes = [
-  {
-    id: "1",
-    title: "Pokémon Sword Nuzlocke",
-    game: "Pokémon Sword",
-    startDate: "2023-01-15",
-    status: "active",
-    players: ["Matilde", "Jugador 2", "Jugador 3"],
-    progress: "6/8 medallas",
-    deaths: 4,
-    lastUpdated: "2023-05-01",
-  },
-  {
-    id: "2",
-    title: "Pokémon Emerald Challenge",
-    game: "Pokémon Emerald",
-    startDate: "2022-10-05",
-    status: "completed",
-    players: ["Matilde", "Jugador 2"],
-    progress: "Liga Pokémon completada",
-    deaths: 7,
-    lastUpdated: "2022-12-20",
-  },
-  {
-    id: "3",
-    title: "Pokémon FireRed Hardcore",
-    game: "Pokémon FireRed",
-    startDate: "2022-06-10",
-    status: "failed",
-    players: ["Matilde", "Jugador 3"],
-    progress: "4/8 medallas",
-    deaths: 12,
-    lastUpdated: "2022-08-15",
-  },
-]
+type NuzlockeListProps = {
+  nuzlockes: any[]
+}
 
-export function NuzlockeList() {
-  const [nuzlockes] = useState(initialNuzlockes)
+export function NuzlockeList({ nuzlockes }: NuzlockeListProps) {
+  if (nuzlockes.length === 0) {
+    return (
+      <div className="text-center p-8 bg-white rounded-lg shadow">
+        <h3 className="text-xl font-semibold mb-2">No hay Nuzlockes todavía</h3>
+        <p className="text-gray-500 mb-4">¡Crea tu primer Nuzlocke para comenzar a trackear tu aventura!</p>
+      </div>
+    )
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -77,22 +50,18 @@ export function NuzlockeList() {
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm">
                 <Clock className="h-4 w-4 text-gray-500" />
-                <span>Iniciado: {new Date(nuzlocke.startDate).toLocaleDateString()}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Trophy className="h-4 w-4 text-gray-500" />
-                <span>{nuzlocke.progress}</span>
+                <span>Iniciado: {new Date(nuzlocke.start_date).toLocaleDateString()}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <Skull className="h-4 w-4 text-gray-500" />
-                <span>{nuzlocke.deaths} Pokémon perdidos</span>
+                <span>Última actualización: {new Date(nuzlocke.last_updated).toLocaleDateString()}</span>
               </div>
               <div className="mt-2">
                 <p className="text-sm text-gray-500 mb-1">Jugadores:</p>
                 <div className="flex flex-wrap gap-1">
                   {nuzlocke.players.map((player) => (
-                    <Badge key={player} variant="outline" className="bg-pink-50">
-                      {player}
+                    <Badge key={player.id} variant="outline" className="bg-pink-50">
+                      {player.name} ({player.lives} vidas)
                     </Badge>
                   ))}
                 </div>
@@ -101,7 +70,7 @@ export function NuzlockeList() {
           </CardContent>
           <CardFooter className="flex justify-between border-t pt-4">
             <p className="text-xs text-gray-500">
-              Última actualización: {new Date(nuzlocke.lastUpdated).toLocaleDateString()}
+              {nuzlocke.description ? nuzlocke.description.substring(0, 50) + "..." : "Sin descripción"}
             </p>
             <Link href={`/nuzlocke/${nuzlocke.id}`}>
               <Button size="sm" variant="ghost" className="gap-1">
@@ -123,6 +92,8 @@ function getStatusColor(status: string) {
       return "bg-blue-50"
     case "failed":
       return "bg-red-50"
+    case "archived":
+      return "bg-gray-50"
     default:
       return "bg-gray-50"
   }
@@ -136,6 +107,8 @@ function getStatusText(status: string) {
       return "Completado"
     case "failed":
       return "Fallido"
+    case "archived":
+      return "Archivado"
     default:
       return status
   }

@@ -17,15 +17,19 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
 import { PlusCircle } from "lucide-react"
+import { createNuzlocke } from "@/lib/actions/nuzlocke"
 
 export function CreateNuzlockeButton() {
   const router = useRouter()
   const [open, setOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [title, setTitle] = useState("")
   const [game, setGame] = useState("")
+  const [description, setDescription] = useState("")
   const [players, setPlayers] = useState(["", "", ""])
 
   const handlePlayerChange = (index: number, value: string) => {
@@ -34,50 +38,72 @@ export function CreateNuzlockeButton() {
     setPlayers(newPlayers)
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsSubmitting(true)
 
-    // Validación básica
-    if (!title.trim()) {
+    try {
+      // Validación básica
+      if (!title.trim()) {
+        toast({
+          title: "Error",
+          description: "El título es obligatorio",
+          variant: "destructive",
+        })
+        setIsSubmitting(false)
+        return
+      }
+
+      if (!game) {
+        toast({
+          title: "Error",
+          description: "Debes seleccionar un juego",
+          variant: "destructive",
+        })
+        setIsSubmitting(false)
+        return
+      }
+
+      if (!players[0].trim()) {
+        toast({
+          title: "Error",
+          description: "Al menos un jugador es obligatorio",
+          variant: "destructive",
+        })
+        setIsSubmitting(false)
+        return
+      }
+
+      // Filtrar jugadores vacíos
+      const filteredPlayers = players.filter((p) => p.trim() !== "")
+
+      // Crear el nuzlocke en la base de datos
+      const nuzlocke = await createNuzlocke({
+        title,
+        game,
+        description,
+        players: filteredPlayers,
+      })
+
+      toast({
+        title: "Nuzlocke creado",
+        description: `Tu Nuzlocke "${title}" ha sido creado correctamente`,
+      })
+
+      setOpen(false)
+
+      // Redirigir al nuevo Nuzlocke
+      router.push(`/nuzlocke/${nuzlocke.id}`)
+    } catch (error) {
+      console.error("Error creating nuzlocke:", error)
       toast({
         title: "Error",
-        description: "El título es obligatorio",
+        description: "Ocurrió un error al crear el Nuzlocke. Inténtalo de nuevo.",
         variant: "destructive",
       })
-      return
+    } finally {
+      setIsSubmitting(false)
     }
-
-    if (!game) {
-      toast({
-        title: "Error",
-        description: "Debes seleccionar un juego",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (!players[0].trim()) {
-      toast({
-        title: "Error",
-        description: "Al menos un jugador es obligatorio",
-        variant: "destructive",
-      })
-      return
-    }
-
-    // En una implementación real, aquí crearíamos el Nuzlocke en la base de datos
-    // y obtendríamos un ID real
-    const newNuzlockeId = Date.now().toString()
-
-    toast({
-      title: "Nuzlocke creado",
-      description: `Tu Nuzlocke "${title}" ha sido creado correctamente`,
-    })
-
-    setOpen(false)
-
-    // Redirigir al nuevo Nuzlocke
-    router.push(`/nuzlocke/${newNuzlockeId}`)
   }
 
   return (
@@ -112,27 +138,46 @@ export function CreateNuzlockeButton() {
                     <SelectValue placeholder="Selecciona un juego" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="sword">Pokémon Sword</SelectItem>
-                    <SelectItem value="shield">Pokémon Shield</SelectItem>
-                    <SelectItem value="bdsp">Pokémon Brilliant Diamond / Shining Pearl</SelectItem>
-                    <SelectItem value="arceus">Pokémon Legends: Arceus</SelectItem>
-                    <SelectItem value="scarlet">Pokémon Scarlet</SelectItem>
-                    <SelectItem value="violet">Pokémon Violet</SelectItem>
-                    <SelectItem value="swsh">Pokémon Sword / Shield</SelectItem>
-                    <SelectItem value="sm">Pokémon Sun / Moon</SelectItem>
-                    <SelectItem value="usum">Pokémon Ultra Sun / Ultra Moon</SelectItem>
-                    <SelectItem value="xy">Pokémon X / Y</SelectItem>
-                    <SelectItem value="oras">Pokémon Omega Ruby / Alpha Sapphire</SelectItem>
-                    <SelectItem value="bw">Pokémon Black / White</SelectItem>
-                    <SelectItem value="bw2">Pokémon Black 2 / White 2</SelectItem>
-                    <SelectItem value="hgss">Pokémon HeartGold / SoulSilver</SelectItem>
-                    <SelectItem value="dpp">Pokémon Diamond / Pearl / Platinum</SelectItem>
-                    <SelectItem value="rse">Pokémon Ruby / Sapphire / Emerald</SelectItem>
-                    <SelectItem value="frlg">Pokémon FireRed / LeafGreen</SelectItem>
-                    <SelectItem value="gsc">Pokémon Gold / Silver / Crystal</SelectItem>
-                    <SelectItem value="rby">Pokémon Red / Blue / Yellow</SelectItem>
+                    <SelectItem value="Pokémon Sword">Pokémon Sword</SelectItem>
+                    <SelectItem value="Pokémon Shield">Pokémon Shield</SelectItem>
+                    <SelectItem value="Pokémon Brilliant Diamond">Pokémon Brilliant Diamond</SelectItem>
+                    <SelectItem value="Pokémon Shining Pearl">Pokémon Shining Pearl</SelectItem>
+                    <SelectItem value="Pokémon Legends: Arceus">Pokémon Legends: Arceus</SelectItem>
+                    <SelectItem value="Pokémon Scarlet">Pokémon Scarlet</SelectItem>
+                    <SelectItem value="Pokémon Violet">Pokémon Violet</SelectItem>
+                    <SelectItem value="Pokémon Sun">Pokémon Sun</SelectItem>
+                    <SelectItem value="Pokémon Moon">Pokémon Moon</SelectItem>
+                    <SelectItem value="Pokémon Ultra Sun">Pokémon Ultra Sun</SelectItem>
+                    <SelectItem value="Pokémon Ultra Moon">Pokémon Ultra Moon</SelectItem>
+                    <SelectItem value="Pokémon X">Pokémon X</SelectItem>
+                    <SelectItem value="Pokémon Y">Pokémon Y</SelectItem>
+                    <SelectItem value="Pokémon Omega Ruby">Pokémon Omega Ruby</SelectItem>
+                    <SelectItem value="Pokémon Alpha Sapphire">Pokémon Alpha Sapphire</SelectItem>
+                    <SelectItem value="Pokémon Black">Pokémon Black</SelectItem>
+                    <SelectItem value="Pokémon White">Pokémon White</SelectItem>
+                    <SelectItem value="Pokémon Black 2">Pokémon Black 2</SelectItem>
+                    <SelectItem value="Pokémon White 2">Pokémon White 2</SelectItem>
+                    <SelectItem value="Pokémon HeartGold">Pokémon HeartGold</SelectItem>
+                    <SelectItem value="Pokémon SoulSilver">Pokémon SoulSilver</SelectItem>
+                    <SelectItem value="Pokémon Diamond">Pokémon Diamond</SelectItem>
+                    <SelectItem value="Pokémon Pearl">Pokémon Pearl</SelectItem>
+                    <SelectItem value="Pokémon Platinum">Pokémon Platinum</SelectItem>
+                    <SelectItem value="Pokémon Ruby">Pokémon Ruby</SelectItem>
+                    <SelectItem value="Pokémon Sapphire">Pokémon Sapphire</SelectItem>
+                    <SelectItem value="Pokémon Emerald">Pokémon Emerald</SelectItem>
+                    <SelectItem value="Pokémon FireRed">Pokémon FireRed</SelectItem>
+                    <SelectItem value="Pokémon LeafGreen">Pokémon LeafGreen</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="description">Descripción (opcional)</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Describe tu desafío Nuzlocke..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
               </div>
               <div className="grid gap-2">
                 <Label>Jugadores</Label>
@@ -149,7 +194,9 @@ export function CreateNuzlockeButton() {
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit">Crear Nuzlocke</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Creando..." : "Crear Nuzlocke"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

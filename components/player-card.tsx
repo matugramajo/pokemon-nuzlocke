@@ -18,7 +18,7 @@ export function PlayerCard({ name, lives, pokemonCount, image }: PlayerCardProps
       <CardContent className="p-4">
         <div className="flex items-center gap-4">
           <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-pink-300">
-            <Image src={image || "/placeholder.svg"} alt={name} fill className="object-cover" />
+            <Image src={image || "/placeholder.svg?height=64&width=64"} alt={name} fill className="object-cover" />
           </div>
           <div className="flex-1">
             <div className="mb-2">
@@ -26,7 +26,7 @@ export function PlayerCard({ name, lives, pokemonCount, image }: PlayerCardProps
                 <span className="text-sm font-medium">Vidas</span>
                 <span className="text-sm font-medium">{lives}/3</span>
               </div>
-              <Progress value={(lives / 3) * 100} className="h-2 bg-pink-100" indicatorClassName="bg-pink-500" />
+              <Progress value={(lives / 3) * 100} className="h-2 bg-pink-100" />
             </div>
             <div className="flex justify-between text-sm">
               <span>Pokémon:</span>
