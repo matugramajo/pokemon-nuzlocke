@@ -24,7 +24,7 @@ export function PlayerCard({ name, lives, pokemonCount, image }: PlayerCardProps
             <div className="mb-2">
               <div className="flex justify-between mb-1">
                 <span className="text-sm font-medium">Vidas</span>
-                <span className="text-sm font-medium">{lives}/3</span>
+                <span className="text-sm font-medium">{lives}/20</span>
               </div>
               <Progress value={(lives / 3) * 100} className="h-2 bg-pink-100" />
             </div>
